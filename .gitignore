@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+/vendor/
+/storage/
+/bootstrap/cache/*
+*.sqlite
+*.sqlite-*
+*.db
+*.log
+*.pem
+*.key
+/backups/
+/node_modules/

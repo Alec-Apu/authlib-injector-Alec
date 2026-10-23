@@ -1,0 +1,24 @@
+{% extends 'admin.base' %}
+{% block title %}邀请码管理{% endblock %}
+{% block content %}
+{% if session('invite_notice') %}<div class="alert alert-success" role="status">{{ session('invite_notice') }}</div>{% endif %}
+<div class="card"><div class="card-body">
+<p>共 {{ total }} 个邀请码，当前可用 {{ available }} 个。每个邀请码只能成功注册一次。</p>
+<form method="post" action="{{ url('admin/invites/generate') }}" class="form-inline">
+<input type="hidden" name="_token" value="{{ csrf_token() }}">
+<label for="invite-count" class="mr-2">生成数量</label><input id="invite-count" class="form-control mr-2" type="number" name="count" value="10" min="1" max="100" required>
+<button type="submit" class="btn btn-primary">生成邀请码</button>
+</form><p class="text-muted mt-3 mb-0">一次可生成 1–100 个。点击邀请码旁的按钮复制后发给玩家；作废后立即无法注册。</p>
+</div></div>
+<div class="card"><div class="table-responsive"><table class="table table-striped mb-0">
+<thead><tr><th>邀请码</th><th>状态</th><th>使用者</th><th>生成时间</th><th>使用 / 作废时间</th><th>操作</th></tr></thead>
+<tbody>{% for invite in invites %}<tr>
+<td><code>{{ invite.code }}</code>{% if not invite.used_at and not invite.revoked_at %} <button type="button" class="btn btn-sm btn-outline-secondary copy-invite" data-code="{{ invite.code }}">复制</button>{% endif %}</td>
+<td>{% if invite.used_at %}<span class="badge badge-secondary">已使用</span>{% elseif invite.revoked_at %}<span class="badge badge-danger">已作废</span>{% else %}<span class="badge badge-success">可用</span>{% endif %}</td>
+<td>{{ invite.nickname|default('—') }}</td><td>{{ invite.created_at|default('—') }}</td><td>{{ invite.used_at|default(invite.revoked_at)|default('—') }}</td>
+<td>{% if not invite.used_at and not invite.revoked_at %}<form method="post" action="{{ url('admin/invites/revoke') }}" onsubmit="return confirm('确定作废这个邀请码？此操作不可撤销。')"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="hash" value="{{ invite.hash }}"><button class="btn btn-sm btn-outline-danger" type="submit">作废</button></form>{% else %}—{% endif %}</td>
+</tr>{% else %}<tr><td colspan="6">暂无邀请码，请先生成。</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer d-flex justify-content-between"><span>第 {{ invites.currentPage() }} / {{ invites.lastPage() }} 页</span><div>{% if invites.previousPageUrl() %}<a class="btn btn-sm btn-outline-secondary mr-2" href="{{ invites.previousPageUrl() }}">上一页</a>{% endif %}{% if invites.nextPageUrl() %}<a class="btn btn-sm btn-outline-secondary" href="{{ invites.nextPageUrl() }}">下一页</a>{% endif %}</div></div></div>
+<p id="invite-copy-status" role="status"></p>
+<script>document.querySelectorAll('.copy-invite').forEach(function(button){button.addEventListener('click',async function(){try{await navigator.clipboard.writeText(button.dataset.code);document.getElementById('invite-copy-status').textContent='已复制邀请码。';}catch(e){document.getElementById('invite-copy-status').textContent='复制失败，请手动选择邀请码复制。';}});});</script>
+{% endblock %}
